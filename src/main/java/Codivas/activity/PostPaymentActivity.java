@@ -1,5 +1,6 @@
 package Codivas.activity;
 
+import Codivas.component.PostPaymentComponent;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 public class PostPaymentActivity {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
+    PostPaymentComponent postPaymentComponent = new PostPaymentComponent();
     public String handleRequest(Map<String, Object> event, Context context) {
         System.out.println("Activity:");
 
@@ -27,9 +28,12 @@ public class PostPaymentActivity {
         String type = (String) inputMap.get("type");
         String customerName = (String) inputMap.get("customerName");
         String destinationName = (String) inputMap.get("destinationName");
-        int amount = (int) inputMap.get("amount");
-        int oldCustomerBalance = (int) inputMap.get("oldCustomerBalance");
-        int newCustomerBalance = (int) inputMap.get("newCustomerBalance");
+        double amountDouble = (double) inputMap.get("amount");
+        float amount = (float) amountDouble;
+        double oldCustomerBalanceDouble = (double) inputMap.get("oldCustomerBalance");
+        float oldCustomerBalance = (float) oldCustomerBalanceDouble;
+        double newCustomerBalanceDouble = (double) inputMap.get("newCustomerBalance");
+        float newCustomerBalance = (float) newCustomerBalanceDouble;
 
         PaymentAttributes paymentAttributes = new PaymentAttributes();
         paymentAttributes.setType(type);
@@ -40,6 +44,6 @@ public class PostPaymentActivity {
         paymentAttributes.setOldCustomerBalance(oldCustomerBalance);
         System.out.println("Request: " + gson.toJson(paymentAttributes));
 
-        return gson.toJson(paymentAttributes);
+        return postPaymentComponent.postPayment(paymentAttributes);
     }
 }
