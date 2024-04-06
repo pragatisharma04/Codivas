@@ -19,9 +19,9 @@ model_params = pd.read_csv('model_params.csv')
 # random_state=model_params['i_forest']['random_state']: This sets the random state or seed for the Isolation Forest model. The random_state parameter ensures that the model's results are reproducible by setting a specific seed for the random number generator. The value for this parameter is taken from the 'random_state' key in the 'i_forest' dictionary of the model_params dictionary.
 # i_forest = IsolationForest(...): This line creates an instance of the Isolation Forest model with the specified parameters and assigns it to the variable i_forest.
 
-n_estimators=100
+n_estimators=500
 max_samples='auto'
-contamination=0.04
+contamination=0.002
 max_feature=1.0
 n_jobs=-1
 random_state=1
