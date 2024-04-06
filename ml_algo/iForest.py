@@ -16,10 +16,17 @@ model_params = pd.read_csv('model_params.csv')
 # random_state=model_params['i_forest']['random_state']: This sets the random state or seed for the Isolation Forest model. The random_state parameter ensures that the model's results are reproducible by setting a specific seed for the random number generator. The value for this parameter is taken from the 'random_state' key in the 'i_forest' dictionary of the model_params dictionary.
 # i_forest = IsolationForest(...): This line creates an instance of the Isolation Forest model with the specified parameters and assigns it to the variable i_forest.
 
+n_estimators=100
+max_samples='auto'
+contamination=0.04
+max_feature=1.0
+n_jobs=-1
+random_state=1
+
 # Initialize the Isolation Forest model
-i_forest = IsolationForest(n_estimators=100, max_samples='auto',
-                          contamination=0.04, max_features=1.0,
-                          bootstrap=False, n_jobs=-1, random_state=1)
+i_forest = IsolationForest(n_estimators=n_estimators, max_samples=max_samples,
+                          contamination=contamination, max_features=max_feature,
+                          bootstrap=False, n_jobs=n_jobs, random_state=random_state)
 
 # Initialize variables to store transaction data
 transaction_data = []
@@ -190,6 +197,8 @@ def process_transaction(transaction):
     # Extract relevant fields from the transaction
     transaction_amount = float(transaction['transactionAmount'])
     card_balance = float(transaction['cardBalance'])
+    #This is a method from the datetime module in Python.
+    # strptime() stands for "string parse time" and is used to convert a string representation of a date and time into a datetime object.
     transaction_time = datetime.datetime.strptime(transaction['dateTimeTransaction'], '%y%m%d%H%M%S')
     merchant_category_code = int(transaction['merchantCategoryCode'])
     latitude = float(transaction['latitude'])
@@ -216,7 +225,8 @@ def process_transaction(transaction):
         #  The np.where() function is used to identify the indices of the transactions that are considered outliers, based on the 'contamination' value specified in the model_params['i_forest'] dictionary.
 
         outlier_scores = i_forest.decision_function(X)
-        outliers = np.where(outlier_scores > model_params['i_forest']['contamination'])[0]
+        # the final result outliers is a numpy array containing the indices of the data points that are identified as outliers by the Isolation Forest algorithm, based on the specified contamination threshold.
+        outliers = np.where(outlier_scores > contamination)[0]
 
         # Flag transactions based on the rules provided
         rule_violations = []
