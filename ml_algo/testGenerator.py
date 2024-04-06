@@ -29,7 +29,7 @@ with open(input_file, 'r') as csvfile:
 
 # Write the output CSV file
 output_file = 'test.csv'
-num_rows = 100  # Number of random rows to generate
+num_rows = 1000  # Number of random rows to generate
 with open(output_file, 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     # Write the header row

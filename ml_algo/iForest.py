@@ -7,6 +7,7 @@ from flask import Flask, request
 from sklearn.ensemble import IsolationForest
 from datetime import datetime, timedelta
 import pickle 
+import plots
 
 # app = Flask(__name__)
 
@@ -26,9 +27,9 @@ n_jobs=-1
 random_state=1
 
 # Create the iforest object
-iforest = IsolationForest(n_estimators=100, max_samples='auto',
-contamination=0.04, max_features=1.0,
-bootstrap=False, n_jobs=-1, random_state=1)
+iforest = IsolationForest(n_estimators=n_estimators, max_samples=max_samples,
+contamination=contamination, max_features=max_feature,
+bootstrap=False, n_jobs=n_jobs, random_state=1)
 
 
 # Initialize variables to store transaction data
@@ -36,6 +37,8 @@ transaction_data = []
 transaction_amounts = []
 transaction_locations = []
 
+
+# Rule3
 def is_transaction_fraudulent(transaction_amount, transactions_df, time_window='all'):
     """
     Checks if a transaction is potentially fraudulent based on the coherence of the transaction pattern.
@@ -81,49 +84,7 @@ def is_transaction_fraudulent(transaction_amount, transactions_df, time_window='
     
     return False
 
-def is_coherent_pattern_window(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, transaction_window):
-    """
-    Check if the transactions from a card follow a coherent pattern based on a given window.
-
-    Parameters:
-    transaction_amount (float): The amount of the current transaction.
-    location (tuple): The location of the current transaction.
-    transaction_age_hours (float): The age of the current transaction in hours.
-    card_balance (float): The current balance of the card.
-    merchant_category_code (int): The merchant category code of the current transaction.
-    transaction_window (DataFrame): The transaction history of the card within the given window.
-
-    Returns:
-    bool: True if the transactions follow a coherent pattern, False otherwise.
-    """
-
-    # Check if the transaction amount is within a reasonable range based on the card balance
-    if transaction_amount >= 0.7 * card_balance and transaction_amount >= 300000:
-        return False
-
-    # Check if the transaction location is within a reasonable distance from the previous transaction location
-
-    # and np.linalg.norm(np.array(location) - np.array(transaction_window['location'].iloc[-1])) >= 200000:
-    # This part of the code calculates the Euclidean distance between the location variable and the location of the last transaction in the transaction_window DataFrame.
-    # np.array(location) converts the location variable (which may be a list or a tuple) into a NumPy array.
-    # np.array(transaction_window['location'].iloc[-1]) extracts the location of the last transaction in the transaction_window DataFrame and converts it into a NumPy array.
-    # np.linalg.norm() calculates the Euclidean distance between the two NumPy arrays.
-    # If the Euclidean distance is greater than or equal to 200,000, the condition will be True.
-
-    # The syntax for using .iloc is df.iloc[row_start:row_end, column_start:column_end], where df is the DataFrame you want to select from.
-    # [-1]: This part of the expression selects the last row of the DataFrame. The negative index -1 refers to the last element in the DataFrame, -2 refers to the second-to-last element, and so on.
-
-
-    if len(transaction_window) > 0 and np.linalg.norm(np.array(location) - np.array(transaction_window['location'].iloc[-1])) >= 200000:
-        return False
-
-    # Check if the transaction merchant category code is consistent with the previous transaction merchant category code
-    if len(transaction_window) > 0 and transaction_window['merchant_category_code'].iloc[-1] != merchant_category_code:
-        return False
-
-    # If the transaction follows a coherent pattern with the previous transactions in the window, return True
-    return True
-
+#Rule4
 def is_coherent_pattern_with_merchant_category_code(transaction_amount, transactions_df, time_window='all'):
         """
         Checks if a transaction is potentially fraudulent based on the coherence of the transaction pattern.
@@ -169,51 +130,6 @@ def is_coherent_pattern_with_merchant_category_code(transaction_amount, transact
         
         return False
 
-def is_coherent_merchant_category_code(merchant_category_code, card_id, transaction_window):
-    """
-    Check if the transaction follows a coherent pattern with the merchant category code in a given window.
-
-    Parameters:
-    merchant_category_code (int): The merchant category code of the current transaction.
-    card_id (str): The unique identifier of the card.
-    transaction_window (DataFrame): The transaction history of the card within the given window.
-
-    Returns:
-    bool: True if the transaction follows a coherent pattern, False otherwise.
-    """
-
-    # Check if there are previous transactions in the window for the card
-    if len(transaction_window) == 0:
-        return True
-
-    # Check if the merchant category code of the current transaction is consistent with the previous transactions
-
-    # transaction_window[transaction_window['card_id'] == card_id]:
-    # This part of the code filters the transaction_window DataFrame to only include rows where the 'card_id' column matches the card_id variable.
-    # The result is a new DataFrame that contains only the relevant transactions for the given card_id.
-
-    # ['merchant_category_code']:
-    # This part of the code selects the 'merchant_category_code' column from the filtered DataFrame.
-    # The result is a Series containing the merchant category codes for the relevant transactions.
-
-    # .eq(merchant_category_code):
-    # This part of the code compares the 'merchant_category_code' Series with the merchant_category_code variable.
-    # The result is a new Series of boolean values, where True indicates that the merchant category code matches the merchant_category_code variable, and False indicates that it doesn't.
-
-    # .all():
-    # This part of the code checks if all the boolean values in the Series are True.
-    # If all the values are True, it means that the 'merchant_category_code' for all the relevant transactions matches the merchant_category_code variable.
-
-    # if not ... return False:
-    # The entire expression is wrapped in an if not statement.
-    # If the .all() check returns False, it means that not all the 'merchant_category_code' values match the merchant_category_code variable.
-    # In this case, the code returns False, indicating that the condition is not met.
-
-    if not transaction_window[transaction_window['card_id'] == card_id]['merchant_category_code'].eq(merchant_category_code).all():
-        return False
-
-    return True
-
 def process_transaction():
         X = np.genfromtxt('train.csv',delimiter=',',skip_header=1,usecols=(2,3,18,10,45,46))
         # Apply the iforest object on the numpy ndarray X to create pred
@@ -228,8 +144,14 @@ def process_transaction():
         # Real time use
         Xrt = np.genfromtxt('test.csv',delimiter=',',skip_header=1,usecols=(2,3,18,10,45,46))
         yrt=iforest.fit_predict(Xrt)
+        outlier_index_test = np.where(yrt==-1)
         print(yrt)
-        
+
+        outlier_values = Xrt[outlier_index_test]
+        plots.plotData(outlier_values,Xrt)
+
+       
+
         rule_violations = []
 
         for i in outlier_index:
@@ -237,13 +159,7 @@ def process_transaction():
             card_balance = X[i][18]
             transaction_age_hours = X[i][2]
             card_id=X[i][16]
-
             current_time = datetime.now()
-
-            
-
-            merchant_category_code = X[i][10]
-            location = (X[i][-2],X[i][-1])
 
             for i in range(len(transaction_amount)):
                 # Convert the datetime to hours
