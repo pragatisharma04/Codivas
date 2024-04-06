@@ -17,9 +17,9 @@ model_params = pd.read_csv('model_params.csv')
 # i_forest = IsolationForest(...): This line creates an instance of the Isolation Forest model with the specified parameters and assigns it to the variable i_forest.
 
 # Initialize the Isolation Forest model
-i_forest = IsolationForest(n_estimators=model_params['i_forest']['n_estimators'],
-                           contamination=model_params['i_forest']['contamination'],
-                           random_state=model_params['i_forest']['random_state'])
+i_forest = IsolationForest(n_estimators=100, max_samples='auto',
+                          contamination=0.04, max_features=1.0,
+                          bootstrap=False, n_jobs=-1, random_state=1)
 
 # Initialize variables to store transaction data
 transaction_data = []
@@ -248,6 +248,7 @@ def process_transaction(transaction):
 
 @app.route('/api/transaction', methods=['POST'])
 def handle_transaction():
+    # This retrieves the JSON data from the incoming HTTP request and assigns it to the transaction variable.
     transaction = request.get_json()
     response = process_transaction(transaction)
     return json.dumps(response)
