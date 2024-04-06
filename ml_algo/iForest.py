@@ -215,6 +215,7 @@ def process_transaction(transaction):
     transaction_locations.append(location)
 
     # Train the Isolation Forest model when enough data is available
+    # model_params['i_forest']['n_samples'] refers to the number of samples (data points) that the Isolation Forest model should be trained on.
     if len(transaction_data) >= model_params['i_forest']['n_samples']:
         X = np.array(transaction_data)
         i_forest.fit(X)
