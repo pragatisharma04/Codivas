@@ -123,39 +123,50 @@ def is_coherent_pattern_window(transaction_amount, location, transaction_age_hou
     # If the transaction follows a coherent pattern with the previous transactions in the window, return True
     return True
 
-def is_coherent_pattern_with_merchant_category_code(merchant_category_code, transaction_age_hours, card_id, transaction_history):
-    """
-    Check if the transaction follows a coherent pattern with the merchant category code of the last 3-day, 7-day, and 30-day windows for the card.
-
-    Parameters:
-    merchant_category_code (int): The merchant category code of the current transaction.
-    transaction_age_hours (float): The age of the current transaction in hours.
-    card_id (str): The unique identifier of the card.
-    transaction_history (DataFrame): The transaction history of the card.
-
-    Returns:
-    bool: True if the transaction follows a coherent pattern, False otherwise.
-    """
-
-    # Filter transaction history based on the last 3-day, 7-day, and 30-day windows
-    last_3_days = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 72) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-    last_7_days = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 168) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-    last_30_days = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 720) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-
-    # Check if the transaction merchant category code is coherent with the last 3-day window
-    if not is_coherent_merchant_category_code(merchant_category_code, card_id, last_3_days):
+def is_coherent_pattern_with_merchant_category_code(transaction_amount, transactions_df, time_window='all'):
+        """
+        Checks if a transaction is potentially fraudulent based on the coherence of the transaction pattern.
+        
+        Args:
+            transaction_amount (float): The amount of the transaction to be checked.
+            transactions_df (pandas.DataFrame): A DataFrame containing the transaction history.
+            time_window (str, optional): The time window to consider. Can be 'all', '12-hour', '1-day', or '7-day'. Defaults to 'all'.
+            
+        Returns:
+            bool: True if the transaction is potentially fraudulent, False otherwise.
+        """
+        # Convert the 'Date' column to datetime
+        transactions_df['dateTimeTransaction'] = pd.to_datetime(transactions_df['dateTimeTransaction'])
+        
+        # Calculate the transaction windows
+        now = datetime.now()
+        thirty_day_window = now - timedelta(hours=30)
+        three_day_window = now - timedelta(days=3)
+        seven_day_window = now - timedelta(days=7)
+        
+        # Check the coherence of the transaction pattern for the specified window
+        if time_window == '30-day':
+            twelve_hour_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= thirty_day_window) & (transactions_df['dateTimeTransaction'] <= now)]
+            if len(twelve_hour_transactions) > 0 and transaction_amount > 3 * twelve_hour_transactions['transactionAmount'].mean():
+                return True
+        elif time_window == '3-day':
+            three_day_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= three_day_window) & (transactions_df['dateTimeTransaction'] <= now)]
+            if len(three_day_transactions) > 0 and transaction_amount > 2 * three_day_transactions['transactionAmount'].mean():
+                return True
+        elif time_window == '7-day':
+            seven_day_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= seven_day_window) & (transactions_df['dateTimeTransaction'] <= now)]
+            if len(seven_day_transactions) > 0 and transaction_amount > 1.5 * seven_day_transactions['transactionAmount'].mean():
+                return True
+        else:
+            # Check all time windows
+            if is_transaction_fraudulent(transaction_amount, transactions_df, '30-day'):
+                return True
+            elif is_transaction_fraudulent(transaction_amount, transactions_df, '3-day'):
+                return True
+            elif is_transaction_fraudulent(transaction_amount, transactions_df, '7-day'):
+                return True
+        
         return False
-
-    # Check if the transaction merchant category code is coherent with the last 7-day window
-    if not is_coherent_merchant_category_code(merchant_category_code, card_id, last_7_days):
-        return False
-
-    # Check if the transaction merchant category code is coherent with the last 30-day window
-    if not is_coherent_merchant_category_code(merchant_category_code, card_id, last_30_days):
-        return False
-
-    # If the transaction follows a coherent pattern in all three windows, return True
-    return True
 
 def is_coherent_merchant_category_code(merchant_category_code, card_id, transaction_window):
     """
@@ -249,8 +260,8 @@ def process_transaction():
                 if not is_transaction_fraudulent(transaction_amount,model_params):
                     rule_violations.append('RULE-003')
 
-                # if not is_coherent_pattern_with_merchant_category_code(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code):
-                #     rule_violations.append('RULE-004')
+                if not is_coherent_pattern_with_merchant_category_code(transaction_amount,model_params):
+                    rule_violations.append('RULE-004')
 
         retval={
             'status': 'ALERT' if rule_violations else 'OK',
