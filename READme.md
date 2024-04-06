@@ -5,4 +5,3 @@ Theme: Develop an API that uses machine learning to analyse payment transactions
 Building a Real-Time Fraud Detection API to detect and curtail frauds
 
 Architecture Diagram-
-![Uploading image.png…]()
