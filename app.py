@@ -2,7 +2,6 @@ from flask import Flask,render_template, render_template,request
 import pickle
 import numpy as np
 from sklearn import *
-from sklearn.linear_model._base import _preprocess_data
 #from sklearn.ensemble._iforest import *
 from sklearn.ensemble import IsolationForest
 
@@ -17,18 +16,17 @@ def ValuePredictor(to_predict_list):
     loaded_model = pickle.load(open("model.pkl", "rb"))
     result = loaded_model.predict(to_predict)
     return result[0]
-
+    
 @app.route('/predict',methods = ['POST'])
 def get_result():
     to_predict_list = request.form.to_dict()
     to_predict_list = list(to_predict_list.values())
     to_predict_list = list(map(int, to_predict_list))
-    result = ValuePredictor(to_predict_list)        
-    if int(result)== 1:
-        prediction ='Income more than 50K'
+    result = ValuePredictor(to_predict_list)
+    if(result==-1):
+        return "Fraudulent Transaction!!"
     else:
-        prediction ='Income less that 50K'           
-    return render_template("result.html", prediction = prediction)
+        return "OK"
 
 if __name__ == "__main__":
     app.run(debug=True)
