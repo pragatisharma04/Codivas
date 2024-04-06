@@ -6,6 +6,7 @@ import pandas as pd
 from flask import Flask, request
 from sklearn.ensemble import IsolationForest
 from datetime import datetime, timedelta
+import pickle 
 
 # app = Flask(__name__)
 
@@ -274,6 +275,7 @@ def process_transaction():
 
 
 process_transaction()
+pickle.dump(iforest,open('model.pkl','wb'))
 
 
 # @app.route('/api/transaction', methods=['POST'])
