@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Income Prediction Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        input[type=text] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        input[type=submit] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        input[type=submit]:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Income Prediction Form</h3>
+        <form action="/predict" method="POST">
+            <div class="form-group">
+                <label for="transactionAmount">Transaction Amount</label>
+                <input type="text" id="transactionAmount" name="transactionAmount" placeholder="Enter transaction amount">
+            </div>
+            <div class="form-group">
+                <label for="dateTimeTransaction">Date and Time of Transaction</label>
+                <input type="text" id="dateTimeTransaction" name="dateTimeTransaction" placeholder="Enter date and time of transaction">
+            </div>
+            <div class="form-group">
+                <label for="cardBalance">Card Balance</label>
+                <input type="text" id="cardBalance" name="cardBalance" placeholder="Enter card balance">
+            </div>
+            <div class="form-group">
+                <label for="merchantCategoryCode">Merchant Category Code</label>
+                <input type="text" id="merchantCategoryCode" name="merchantCategoryCode" placeholder="Enter merchant category code">
+            </div>
+            <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input type="text" id="latitude" name="latitude" placeholder="Enter latitude">
+            </div>
+            <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input type="text" id="longitude" name="longitude" placeholder="Enter longitude">
+            </div>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+</body>
+</html>
