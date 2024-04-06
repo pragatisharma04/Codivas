@@ -24,9 +24,9 @@ def get_result():
     to_predict_list = list(map(int, to_predict_list))
     result = ValuePredictor(to_predict_list)
     if(result==-1):
-        return "Fraudulent Transaction!!"
+        return render_template('error.html')
     else:
-        return "OK"
+        return render_template('success.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

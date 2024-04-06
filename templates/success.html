@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fraud Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .green-screen {
+            background-color: #4CAF50;
+            color: white;
+            padding: 50px;
+            border-radius: 10px;
+            font-size: 36px;
+            font-weight: bold;
+            animation: pulse 2s infinite, rotate 10s linear infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .checkmark {
+            font-size: 100px;
+            color: #4CAF50;
+            animation: checkmark-appear 1s ease-in-out;
+        }
+
+        @keyframes checkmark-appear {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="green-screen">
+            <i class="checkmark">&#10003;</i>
+            <br>
+            No Fraud Detected
+        </div>
+    </div>
+</body>
+</html>
