@@ -11,6 +11,10 @@ app = Flask(__name__)
 # Load model parameters from a CSV file
 model_params = pd.read_csv('model_params.csv')
 
+# n_estimators=model_params['i_forest']['n_estimators']: This sets the number of trees in the Isolation Forest model. The n_estimators parameter determines the number of decision trees that will be used in the ensemble. The value for this parameter is taken from the 'n_estimators' key in the 'i_forest' dictionary of the model_params dictionary.
+# contamination=model_params['i_forest']['contamination']: This sets the expected proportion of outliers in the dataset. The contamination parameter specifies the proportion of outliers in the dataset, which is used to determine the threshold for identifying anomalies. The value for this parameter is taken from the 'contamination' key in the 'i_forest' dictionary of the model_params dictionary.
+# random_state=model_params['i_forest']['random_state']: This sets the random state or seed for the Isolation Forest model. The random_state parameter ensures that the model's results are reproducible by setting a specific seed for the random number generator. The value for this parameter is taken from the 'random_state' key in the 'i_forest' dictionary of the model_params dictionary.
+# i_forest = IsolationForest(...): This line creates an instance of the Isolation Forest model with the specified parameters and assigns it to the variable i_forest.
 
 # Initialize the Isolation Forest model
 i_forest = IsolationForest(n_estimators=model_params['i_forest']['n_estimators'],
@@ -79,6 +83,18 @@ def is_coherent_pattern_window(transaction_amount, location, transaction_age_hou
         return False
 
     # Check if the transaction location is within a reasonable distance from the previous transaction location
+
+    # and np.linalg.norm(np.array(location) - np.array(transaction_window['location'].iloc[-1])) >= 200000:
+    # This part of the code calculates the Euclidean distance between the location variable and the location of the last transaction in the transaction_window DataFrame.
+    # np.array(location) converts the location variable (which may be a list or a tuple) into a NumPy array.
+    # np.array(transaction_window['location'].iloc[-1]) extracts the location of the last transaction in the transaction_window DataFrame and converts it into a NumPy array.
+    # np.linalg.norm() calculates the Euclidean distance between the two NumPy arrays.
+    # If the Euclidean distance is greater than or equal to 200,000, the condition will be True.
+
+    # The syntax for using .iloc is df.iloc[row_start:row_end, column_start:column_end], where df is the DataFrame you want to select from.
+    # [-1]: This part of the expression selects the last row of the DataFrame. The negative index -1 refers to the last element in the DataFrame, -2 refers to the second-to-last element, and so on.
+
+
     if len(transaction_window) > 0 and np.linalg.norm(np.array(location) - np.array(transaction_window['location'].iloc[-1])) >= 200000:
         return False
 
@@ -141,6 +157,30 @@ def is_coherent_merchant_category_code(merchant_category_code, card_id, transact
         return True
 
     # Check if the merchant category code of the current transaction is consistent with the previous transactions
+
+    # transaction_window[transaction_window['card_id'] == card_id]:
+    # This part of the code filters the transaction_window DataFrame to only include rows where the 'card_id' column matches the card_id variable.
+    # The result is a new DataFrame that contains only the relevant transactions for the given card_id.
+
+    # ['merchant_category_code']:
+    # This part of the code selects the 'merchant_category_code' column from the filtered DataFrame.
+    # The result is a Series containing the merchant category codes for the relevant transactions.
+
+    # .eq(merchant_category_code):
+    # This part of the code compares the 'merchant_category_code' Series with the merchant_category_code variable.
+    # The result is a new Series of boolean values, where True indicates that the merchant category code matches the merchant_category_code variable, and False indicates that it doesn't.
+
+    # .all():
+    # This part of the code checks if all the boolean values in the Series are True.
+    # If all the values are True, it means that the 'merchant_category_code' for all the relevant transactions matches the merchant_category_code variable.
+
+    # if not ... return False:
+    # The entire expression is wrapped in an if not statement.
+    # If the .all() check returns False, it means that not all the 'merchant_category_code' values match the merchant_category_code variable.
+    # In this case, the code returns False, indicating that the condition is not met.
+
+
+
     if not transaction_window[transaction_window['card_id'] == card_id]['merchant_category_code'].eq(merchant_category_code).all():
         return False
 
@@ -171,6 +211,10 @@ def process_transaction(transaction):
         i_forest.fit(X)
 
         # Predict outliers
+
+        #  After training the Isolation Forest model, the code uses the i_forest.decision_function(X) method to calculate the outlier scores for each transaction in the X data.
+        #  The np.where() function is used to identify the indices of the transactions that are considered outliers, based on the 'contamination' value specified in the model_params['i_forest'] dictionary.
+
         outlier_scores = i_forest.decision_function(X)
         outliers = np.where(outlier_scores > model_params['i_forest']['contamination'])[0]
 
