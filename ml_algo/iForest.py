@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, request
 from sklearn.ensemble import IsolationForest
+from datetime import datetime, timedelta
 
 # app = Flask(__name__)
 
@@ -23,51 +24,61 @@ max_feature=1.0
 n_jobs=-1
 random_state=1
 
-# Initialize the Isolation Forest model
-i_forest = IsolationForest(n_estimators=n_estimators, max_samples=max_samples,
-                          contamination=contamination, max_features=max_feature,
-                          bootstrap=False, n_jobs=n_jobs, random_state=random_state)
+# Create the iforest object
+iforest = IsolationForest(n_estimators=100, max_samples='auto',
+contamination=0.04, max_features=1.0,
+bootstrap=False, n_jobs=-1, random_state=1)
+
 
 # Initialize variables to store transaction data
 transaction_data = []
 transaction_amounts = []
 transaction_locations = []
 
-def is_coherent_pattern(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, transaction_history):
+def is_transaction_fraudulent(transaction_amount, transactions_df, time_window='all'):
     """
-    Check if the transactions from a card follow a coherent pattern based on the last 12-hour, 1-day, and 7-day windows.
-
-    Parameters:
-    transaction_amount (float): The amount of the current transaction.
-    location (tuple): The location of the current transaction.
-    transaction_age_hours (float): The age of the current transaction in hours.
-    card_balance (float): The current balance of the card.
-    merchant_category_code (int): The merchant category code of the current transaction.
-    transaction_history (DataFrame): The transaction history of the card.
-
+    Checks if a transaction is potentially fraudulent based on the coherence of the transaction pattern.
+    
+    Args:
+        transaction_amount (float): The amount of the transaction to be checked.
+        transactions_df (pandas.DataFrame): A DataFrame containing the transaction history.
+        time_window (str, optional): The time window to consider. Can be 'all', '12-hour', '1-day', or '7-day'. Defaults to 'all'.
+        
     Returns:
-    bool: True if the transactions follow a coherent pattern, False otherwise.
+        bool: True if the transaction is potentially fraudulent, False otherwise.
     """
-
-    # Filter transaction history based on the last 12-hour, 1-day, and 7-day windows
-    last_12_hours = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 12) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-    last_1_day = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 24) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-    last_7_days = transaction_history[(transaction_history['transaction_time'] >= transaction_age_hours - 168) & (transaction_history['transaction_time'] <= transaction_age_hours)]
-
-    # Check if the transactions follow a coherent pattern based on the last 12-hour window
-    if not is_coherent_pattern_window(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, last_12_hours):
-        return False
-
-    # Check if the transactions follow a coherent pattern based on the last 1-day window
-    if not is_coherent_pattern_window(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, last_1_day):
-        return False
-
-    # Check if the transactions follow a coherent pattern based on the last 7-day window
-    if not is_coherent_pattern_window(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, last_7_days):
-        return False
-
-    # If the transactions follow a coherent pattern in all three windows, return True
-    return True
+    # Convert the 'Date' column to datetime
+    transactions_df['dateTimeTransaction'] = pd.to_datetime(transactions_df['dateTimeTransaction'])
+    
+    # Calculate the transaction windows
+    now = datetime.now()
+    twelve_hour_window = now - timedelta(hours=12)
+    one_day_window = now - timedelta(days=1)
+    seven_day_window = now - timedelta(days=7)
+    
+    # Check the coherence of the transaction pattern for the specified window
+    if time_window == '12-hour':
+        twelve_hour_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= twelve_hour_window) & (transactions_df['dateTimeTransaction'] <= now)]
+        if len(twelve_hour_transactions) > 0 and transaction_amount > 3 * twelve_hour_transactions['transactionAmount'].mean():
+            return True
+    elif time_window == '1-day':
+        one_day_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= one_day_window) & (transactions_df['dateTimeTransaction'] <= now)]
+        if len(one_day_transactions) > 0 and transaction_amount > 2 * one_day_transactions['transactionAmount'].mean():
+            return True
+    elif time_window == '7-day':
+        seven_day_transactions = transactions_df[(transactions_df['dateTimeTransaction'] >= seven_day_window) & (transactions_df['dateTimeTransaction'] <= now)]
+        if len(seven_day_transactions) > 0 and transaction_amount > 1.5 * seven_day_transactions['transactionAmount'].mean():
+            return True
+    else:
+        # Check all time windows
+        if is_transaction_fraudulent(transaction_amount, transactions_df, '12-hour'):
+            return True
+        elif is_transaction_fraudulent(transaction_amount, transactions_df, '1-day'):
+            return True
+        elif is_transaction_fraudulent(transaction_amount, transactions_df, '7-day'):
+            return True
+    
+    return False
 
 def is_coherent_pattern_window(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code, transaction_window):
     """
@@ -86,7 +97,7 @@ def is_coherent_pattern_window(transaction_amount, location, transaction_age_hou
     """
 
     # Check if the transaction amount is within a reasonable range based on the card balance
-    if transaction_amount >= 0.7 * card_balance and card_balance >= 300000:
+    if transaction_amount >= 0.7 * card_balance and transaction_amount >= 300000:
         return False
 
     # Check if the transaction location is within a reasonable distance from the previous transaction location
@@ -186,86 +197,72 @@ def is_coherent_merchant_category_code(merchant_category_code, card_id, transact
     # If the .all() check returns False, it means that not all the 'merchant_category_code' values match the merchant_category_code variable.
     # In this case, the code returns False, indicating that the condition is not met.
 
-
-
     if not transaction_window[transaction_window['card_id'] == card_id]['merchant_category_code'].eq(merchant_category_code).all():
         return False
 
     return True
 
-def process_transaction(transactionData):
-    for index, transaction in df.iterrows():     
-        # Extract relevant fields from the transaction
-        transaction_amount = float(transaction['transactionAmount'])
-        card_balance = float(transaction['cardBalance'])
-        #This is a method from the datetime module in Python.
-        # strptime() stands for "string parse time" and is used to convert a string representation of a date and time into a datetime object.
-        transaction_time = datetime.datetime.strptime(transaction['dateTimeTransaction'], '%Y-%m-%d %H:%M:%S.%f')
-        merchant_category_code = int(transaction['merchantCategoryCode'])
-        latitude = float(transaction['latitude'])
-        longitude = float(transaction['longitude'])
-        location = (latitude, longitude)
+def process_transaction():
+        X = np.genfromtxt('train.csv',delimiter=',',skip_header=1,usecols=(2,3,18,10,45,46))
+        # Apply the iforest object on the numpy ndarray X to create pred
+        # pred is a numpy ndarray that returns 1 for inliers, -1 for outliers
+        pred = iforest.fit_predict(X)
 
-        # Calculate transactional attributes
-        transaction_age = datetime.datetime.now() - transaction_time
-        transaction_age_hours = transaction_age.total_seconds() / 3600
+        # Extract outliers
+        outlier_index = np.where(pred==-1)
+        print("Outliers in training data")
+        print(outlier_index)
 
-        # Update transaction data
-        transaction_data.append([transaction_amount, card_balance, transaction_age_hours, merchant_category_code, location])
-        transaction_amounts.append(transaction_amount)
-        transaction_locations.append(location)
+        # Real time use
+        Xrt = np.genfromtxt('test.csv',delimiter=',',skip_header=1,usecols=(2,3,18,10,45,46))
+        yrt=iforest.fit_predict(Xrt)
+        print(yrt)
+        
+        rule_violations = []
 
-        # Train the Isolation Forest model when enough data is available
-        # model_params['i_forest']['n_samples'] refers to the number of samples (data points) that the Isolation Forest model should be trained on.
-        if len(transaction_data) >= 2:
-            X = np.array(transaction_data)
-            i_forest.fit(X)
+        for i in outlier_index:
+            transaction_amount = X[i][2]
+            card_balance = X[i][18]
+            transaction_age_hours = X[i][2]
+            card_id=X[i][16]
 
-            # Predict outliers
+            current_time = datetime.now()
 
-            #  After training the Isolation Forest model, the code uses the i_forest.decision_function(X) method to calculate the outlier scores for each transaction in the X data.
-            #  The np.where() function is used to identify the indices of the transactions that are considered outliers, based on the 'contamination' value specified in the model_params['i_forest'] dictionary.
+            
 
-            outlier_scores = i_forest.decision_function(X)
-            # the final result outliers is a numpy array containing the indices of the data points that are identified as outliers by the Isolation Forest algorithm, based on the specified contamination threshold.
-            outliers = np.where(outlier_scores > contamination)[0]
+            merchant_category_code = X[i][10]
+            location = (X[i][-2],X[i][-1])
 
-            # Flag transactions based on the rules provided
-            rule_violations = []
+            for i in range(len(transaction_amount)):
+                # Convert the datetime to hours
+                hours = current_time.hour + (current_time.minute / 60) + (current_time.second / 3600) + (current_time.microsecond / 3600000000)
 
-            for i in outliers:
-                transaction_amount = X[i][2]
-                card_balance = X[i][18]
-                # transaction_age_hours = X[i][2]
-                transaction_age = datetime.datetime.now() - X[i][3]
-                transaction_age_hours = transaction_age.total_seconds() / 3600
-                merchant_category_code = X[i][10]
-                location = (X[i][-2],X[i][-1])
+                transaction_age_h = hours - transaction_age_hours[i]
 
-                if transaction_amount >= 0.7 * card_balance and card_balance >= 300000 and transaction_age_hours <= 12:
+                if (transaction_amount[i] >= 0.7 * card_balance[i] ) and card_balance[i] >= 300000 and transaction_age_h<=12 or card_balance[i]<=transaction_amount[i]:
                     rule_violations.append('RULE-001')
+                    break
 
                 if len(set(transaction_locations)) > 5 and np.min(np.diff([location[0] for location in transaction_locations])) >= 200000 and sum(transaction_amounts) >= 100000:
                     rule_violations.append('RULE-002')
 
-                if not is_coherent_pattern(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code):
+                if not is_transaction_fraudulent(transaction_amount,model_params):
                     rule_violations.append('RULE-003')
 
-                if not is_coherent_pattern_with_merchant_category_code(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code):
-                    rule_violations.append('RULE-004')
+                # if not is_coherent_pattern_with_merchant_category_code(transaction_amount, location, transaction_age_hours, card_balance, merchant_category_code):
+                #     rule_violations.append('RULE-004')
 
-            retval={
-                'status': 'ALERT' if rule_violations else 'OK',
-                'ruleViolated': rule_violations,
-                'timestamp': str(int(time.time()))
-            }
+        retval={
+            'status': 'ALERT' if rule_violations else 'OK',
+            'ruleViolated': rule_violations,
+            'timestamp': str(int(time.time()))
+        }
 
-            print(retval)
+        print(retval)
 
 
 
-df = pd.read_csv('train.csv')
-process_transaction(df)
+process_transaction()
 
 
 # @app.route('/api/transaction', methods=['POST'])

@@ -9,15 +9,15 @@ def generate_random_row(sample_row):
       if(value=="dateTimeTransaction"):
             random_row.append(dateTimeGenerator.generate_random_datetime())
       elif(value=="latitude"):
-             random_row.append(random.uniform(-90, 90))
+             random_row.append(random.randint(-90, 90))
       elif (value=="longitude"):
-            random_row.append(random.uniform(-180, 180))
+            random_row.append(random.randint(-180, 180))
       elif isinstance(value, int):
-            random_row.append(random.randint(0, 100))
+            random_row.append(random.randint(0, 1000000))
       elif isinstance(value, float):
-            random_row.append(random.uniform(0, 100))
+            random_row.append(random.randint(0, 1000000))
       else:
-            random_row.append(str(random.randint(0, 100)))
+            random_row.append(str(random.randint(0, 1000000)))
     return random_row
 
 # Read the input CSV file

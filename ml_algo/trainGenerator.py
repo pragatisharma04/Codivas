@@ -12,15 +12,15 @@ def generate_random_row(sample_row):
         if(value=="dateTimeTransaction"):
             random_row.append(dateTimeGenerator.generate_random_datetime())
         elif(value=="latitude"):
-             random_row.append(random.uniform(-90, 90))
+             random_row.append(random.randint(-90, 90))
         elif (value=="longitude"):
-            random_row.append(random.uniform(-180, 180))
+            random_row.append(random.randint(-180, 180))
         elif isinstance(value, int):
-            random_row.append(random.randint(0, 100))
+            random_row.append(random.randint(0, 1000000))
         elif isinstance(value, float):
-            random_row.append(random.uniform(0, 100))
+            random_row.append(random.randint(0, 1000000))
         else:
-            random_row.append(str(random.randint(0, 100)))
+            random_row.append(str(random.randint(0, 1000000)))
     return random_row
 
 # Read the input CSV file
@@ -32,7 +32,7 @@ with open(input_file, 'r') as csvfile:
 
 # Write the output CSV file
 output_file = 'train.csv'
-num_rows = 1000  # Number of random rows to generate
+num_rows = 10000  # Number of random rows to generate
 with open(output_file, 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     # Write the header row
