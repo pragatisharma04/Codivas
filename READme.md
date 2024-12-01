@@ -11,6 +11,9 @@ Develop an API that uses machine learning to analyze payment transactions and id
 Architecture Diagram-
 ![architecture_chhalaang2 0](https://github.com/pragatisharma04/Codivas/assets/60577980/61e63bfb-b607-4a8c-a043-62dc42b5945a)
 
+Video link demonstrating the project:
+https://drive.google.com/file/d/1YFkle1aqsDqGToOfOqIYLwIrMzXj5zau/view
+
 
 
 
