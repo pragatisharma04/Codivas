@@ -3,7 +3,7 @@ Microsoft Chhalaang Hackathon 2.0
 Introduction
 Anomaly detection is important for detecting fraudulent credit card activities, fault detection in critical machinery,
 anomalies) to name just a few. 
-![Uploading image.png…]()
+
 
 Theme: Develop an API that uses machine learning to analyse payment transactions and identify suspicious activity in real-time.
 
