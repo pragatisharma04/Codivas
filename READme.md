@@ -14,6 +14,9 @@ Architecture Diagram-
 Video link demonstrating the project:
 https://drive.google.com/file/d/1YFkle1aqsDqGToOfOqIYLwIrMzXj5zau/view
 
+Presentation demonstrating why Isolation Forest Algorithm and AWS was used
+https://docs.google.com/presentation/d/1JOt3AbWd9uxOg4CIsvJI6oCzQE8AaFyd/edit?usp=sharing&ouid=108593555082098884911&rtpof=true&sd=true
+
 
 
 
